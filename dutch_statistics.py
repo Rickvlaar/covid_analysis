@@ -28,11 +28,11 @@ def calculate_dutch_daily_statistics():
     session = database_session()
     dutch_cumu_stats = session.query(DutchStatistics).order_by(DutchStatistics.municipality).order_by(
             DutchStatistics.id).all()
+
     index = 0
     for record in dutch_cumu_stats:
         yesterday_record = dutch_cumu_stats[index - 1]
-        if index > 0 and record.municipality == yesterday_record.municipality:
-            print(record)
+        if index > 0 and record.municipality is not None and record.municipality == yesterday_record.municipality:
             record.infections = record.cumulative_infections - yesterday_record.cumulative_infections
             record.deaths = record.cumulative_deaths - yesterday_record.cumulative_deaths
             record.hospitalised = record.cumulative_hospitalised - yesterday_record.cumulative_hospitalised
@@ -41,6 +41,24 @@ def calculate_dutch_daily_statistics():
             record.deaths = 0
             record.hospitalised = 0
         index += 1
+
+    no_municipality_records = session.query(DutchStatistics).filter_by(municipality=None).order_by(
+        DutchStatistics.province).order_by(
+            DutchStatistics.id).all()
+
+    index = 0
+    for record in no_municipality_records:
+        yesterday_record = no_municipality_records[index - 1]
+        if index > 0 and record.province == yesterday_record.province:
+            record.infections = record.cumulative_infections - yesterday_record.cumulative_infections
+            record.deaths = record.cumulative_deaths - yesterday_record.cumulative_deaths
+            record.hospitalised = record.cumulative_hospitalised - yesterday_record.cumulative_hospitalised
+        else:
+            record.infections = 0
+            record.deaths = 0
+            record.hospitalised = 0
+        index += 1
+
     session.commit()
     session.close()
 
