@@ -63,10 +63,15 @@ def calculate_dutch_daily_statistics():
     session.close()
 
 
-def sum_dutch_total_infections():
+def sum_dutch_total_infections(municipality):
     session = database_session()
-    dutch_totals = session.query(DutchStatistics.reported_date, func.sum(DutchStatistics.infections),
+    query = session.query(DutchStatistics.reported_date, func.sum(DutchStatistics.infections),
                                  func.sum(DutchStatistics.hospitalised),
                                  func.sum(DutchStatistics.deaths)).group_by(DutchStatistics.reported_date).order_by(
-            DutchStatistics.reported_date.desc()).all()
+            DutchStatistics.reported_date.desc())
+
+    if municipality:
+        query = query.filter_by(municipality=municipality)
+
+    dutch_totals = query.all()
     return dutch_totals
