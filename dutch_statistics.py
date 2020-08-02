@@ -43,7 +43,7 @@ def calculate_dutch_daily_statistics():
         index += 1
 
     no_municipality_records = session.query(DutchStatistics).filter_by(municipality=None).order_by(
-        DutchStatistics.province).order_by(
+            DutchStatistics.province).order_by(
             DutchStatistics.id).all()
 
     index = 0
@@ -65,10 +65,12 @@ def calculate_dutch_daily_statistics():
 
 def sum_dutch_total_infections(municipality, province):
     session = database_session()
-    query = session.query(DutchStatistics.reported_date, func.sum(DutchStatistics.infections),
-                                 func.sum(DutchStatistics.hospitalised),
-                                 func.sum(DutchStatistics.deaths)).group_by(DutchStatistics.reported_date).order_by(
-            DutchStatistics.reported_date.desc())
+    query = session.query(DutchStatistics.reported_date,
+                          func.sum(DutchStatistics.infections),
+                          func.sum(DutchStatistics.hospitalised),
+                          func.sum(DutchStatistics.deaths)) \
+        .group_by(DutchStatistics.reported_date) \
+        .order_by(DutchStatistics.reported_date.desc())
 
     if municipality:
         query = query.filter_by(municipality=municipality)

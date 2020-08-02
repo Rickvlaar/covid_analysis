@@ -12,4 +12,4 @@ def quick_caller():
     graph_plotter.plot_statistics(
         data_set=dutch.sum_dutch_total_infections(municipality=None, province=None),
         start_date=datetime.date(2020, 7, 5),
-        no_days_to_predict=12)
+        no_days_to_predict=10)
