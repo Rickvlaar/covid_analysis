@@ -26,15 +26,18 @@ class DutchStatistics(Base):
     cumulative_hospitalised = Column(Integer)
     cumulative_critical = Column(Integer)
     cumulative_deaths = Column(Integer)
+    cumulative_recovered = Column(Integer)
     infections = Column(Integer)
     hospitalised = Column(Integer)
     critical = Column(Integer)
     deaths = Column(Integer)
+    recovered = Column(Integer)
 
     def __repr__(self):
-        return str(self.municipality) + ', ' + str(self.reported_date) + ', ' + str(self.deaths) + ', ' + \
-               str(self.hospitalised) + ', ' + str(self.infections)
+        return self.attributes()
 
     def __str__(self):
-        return str(self.municipality) + ', ' + str(self.reported_date) + ', ' + str(self.deaths) + ', ' + \
-               str(self.hospitalised) + ', ' + str(self.infections)
+        return str(self.attributes())
+
+    def attributes(self):
+        return {key: value for key, value in self.__dict__.items() if key[:1] != '_'}
