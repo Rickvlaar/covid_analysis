@@ -62,6 +62,7 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
     # Finally show the plot
     plt.title('Cases over Time')
     plt.plot(dates, cases)
+    plt.grid(True)
     plt.show()
 
 
