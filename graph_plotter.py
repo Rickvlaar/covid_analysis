@@ -32,7 +32,7 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
     dates = []
     cases = []
     for stat in statistics:
-        if stat[0] > start_date:
+        if stat[0] >= start_date:
             dates.append(stat[0])
             cases.append(stat[1])
 
@@ -52,7 +52,7 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
         # Perform regression and calculate expected cases
         slope, y0, r, p, stderr = stats.linregress(dates, cases)
         cases_expected = [y0 + slope * date for date in predicted_dates]
-        plt.plot(predicted_dates, cases_expected, 'r', label='fitted line')
+        plt.plot(predicted_dates, cases_expected, color='green', label='linear regression')
 
     # Add an exponential curve to the plot
     if exp_curve:
@@ -66,19 +66,28 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
         predict_range = np.linspace(start=1, stop=len(predicted_dates), num=len(predicted_dates))
         predict_range = np.flip(predict_range)
 
-        # Determine best fit for curve and add to plot
+        # Determine best fit for curve and add to plot, include standard deviation
         popt, pcov = optimize.curve_fit(exponent, calc_range, cases)
-        plt.plot(predicted_dates, exponent(np.array(predict_range), popt[0], popt[1]))
+        perr = np.sqrt(np.diag(pcov))
+
+        prediction_low = exponent(np.array(predict_range), popt[0] - perr[0], popt[1] - perr[1])
+        prediction_optimum = exponent(np.array(predict_range), popt[0], popt[1])
+        prediction_high = exponent(np.array(predict_range), popt[0] + perr[0], popt[1] + perr[1])
+
+        # Plot the optimum as line and the rest as area
+        plt.plot(predicted_dates, prediction_optimum, color='blue', label='curve fit')
+        plt.gca().fill_between(predicted_dates, prediction_low, prediction_high, alpha=0.2)
 
     # Plot final results
     plt.title('Cases over Time')
-    plt.plot(dates, cases)
+    plt.plot(dates, cases, color='red', label='positive tests')
 
     # Tweak the output
     fig = plt.gcf()
     ax = plt.gca()
 
     # Convert dates to legible format and show grid on day level
+    plt.xlim(left=start_date, right=predicted_dates[0])
     days = mdates.DayLocator()
     fmt = mdates.DateFormatter('%Y-%m-%d')
     ax.xaxis.set_minor_locator(days)
@@ -94,8 +103,9 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
     # Show values for predictions and latest count
     ax.annotate(str(cases[0]), xy=(dates[0], cases[0]))
 
-    # Increase image size
-    fig.set_size_inches(10.24, 7.68)
+    # Set image size and show labels
+    fig.set_size_inches(12, 8)
+    plt.legend()
 
     # Finally show the plot
     plt.show()
