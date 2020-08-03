@@ -13,7 +13,7 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
     data_set: list of DutchStatistics
         pass data set containing statistics to plot
     start_date: datetime.date
-        date to start predicting e.g datetime.date(2020, 7, 30)
+        date to start plotting the data e.g datetime.date(2020, 7, 30)
     no_days_to_predict: int, optional
         number of dates to predict in the future
     linear_regres: boolean, optional
@@ -21,6 +21,8 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
     exp_curve: boolean, optional
         defaults to true; plots an exponential curve on the dataset
 
+    :return:
+    Plots a graph with measured cases and optionaly adds statistical prediction
     """
 
     if no_days_to_predict > 0 and not exp_curve and not linear_regres:
@@ -87,7 +89,6 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
     ax = plt.gca()
 
     # Convert dates to legible format and show grid on day level
-    plt.xlim(left=start_date, right=predicted_dates[0])
     days = mdates.DayLocator()
     fmt = mdates.DateFormatter('%Y-%m-%d')
     ax.xaxis.set_minor_locator(days)
@@ -103,9 +104,26 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
     # Show values for predictions and latest count
     ax.annotate(str(cases[0]), xy=(dates[0], cases[0]))
 
-    # Set image size and show labels
+    # Other tweaks for the graph
+    plt.xlim(left=start_date, right=predicted_dates[0])
+    plt.ylim(bottom=0)
     fig.set_size_inches(12, 8)
-    plt.legend()
+    plt.legend(bbox_to_anchor=(1, 1), loc='upper left')
 
     # Finally show the plot
     plt.show()
+
+
+def cases_per_municipality(data_set, start_date):
+    """
+    Parameters
+    ----------
+    data_set: list of DutchStatistics
+        pass data set containing statistics to plot
+    start_date: datetime.date
+        date to start plotting the data e.g datetime.date(2020, 7, 30)
+
+    :return:
+    stack-bar plot of cases per municipality. A.K.A The guilt-chart
+    """
+
