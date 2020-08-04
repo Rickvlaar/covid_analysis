@@ -3,7 +3,6 @@ import matplotlib.ticker as ticker
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
-import datetime
 
 
 def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True, exp_curve=True):
@@ -109,9 +108,10 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
     plt.ylim(bottom=0)
     fig.set_size_inches(12, 8)
     plt.legend(bbox_to_anchor=(1, 1), loc='upper left')
-
-    # Finally show the plot
     plt.show()
+    # Finally show the plot
+    fig.savefig('frontend/static/test.png')
+    return fig
 
 
 def cases_per_municipality(data_set, start_date):
