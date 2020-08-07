@@ -15,3 +15,9 @@ class Endpoints(object):
 class FlaskConfig(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     FLASK_APP = 'main.py'
+
+    # Flask development settings
+    FLASK_ENV = 'development'
+    DEBUG = True
+
+

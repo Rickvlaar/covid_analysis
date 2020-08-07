@@ -1,5 +1,6 @@
 # Custom additions
 covid_analysis.db
+frontend/static/*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

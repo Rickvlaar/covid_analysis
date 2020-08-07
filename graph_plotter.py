@@ -1,39 +1,52 @@
+from datetime import date
 from scipy import stats, optimize
 import matplotlib.ticker as ticker
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
+import random
 
 
-def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True, exp_curve=True):
+# Prevent GUI from being triggered which causes crashes
+matplotlib.use('agg')
+
+
+def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to_predict=0, linear_regres=True, exp_curve=True):
     """
     Parameters
     ----------
     data_set: list of DutchStatistics
         pass data set containing statistics to plot
-    start_date: datetime.date
+    start_date: datetime.date, optional
         date to start plotting the data e.g datetime.date(2020, 7, 30)
     no_days_to_predict: int, optional
         number of dates to predict in the future
+    end_date: datetime.date, optional
+        defaults to infinity; date to end the plot, useful for date ranges
     linear_regres: boolean, optional
         defaults to true; add a linear regression line up to days to predict
     exp_curve: boolean, optional
         defaults to true; plots an exponential curve on the dataset
 
     :return:
-    Plots a graph with measured cases and optionaly adds statistical prediction
+    Plots a graph with measured cases and optionally adds statistical prediction
     """
 
     if no_days_to_predict > 0 and not exp_curve and not linear_regres:
         msg = 'Choose either exponential and/or linear prediction when using no_days_to_predict'
         raise RuntimeError(msg)
 
+    # None value should default to max
+    if not end_date:
+        end_date = date.max
+
     # Convert the data set for use in the plotter
     statistics = data_set
     dates = []
     cases = []
     for stat in statistics:
-        if stat[0] >= start_date:
+        if end_date >= stat[0] >= start_date:
             dates.append(stat[0])
             cases.append(stat[1])
 
@@ -75,8 +88,11 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
         prediction_optimum = exponent(np.array(predict_range), popt[0], popt[1])
         prediction_high = exponent(np.array(predict_range), popt[0] + perr[0], popt[1] + perr[1])
 
+        # Calculate reproduction number and add to plot
+        reproduction_no = round(exponent(1, popt[0], popt[1]) / exponent(0, popt[0], popt[1]), 2)
+
         # Plot the optimum as line and the rest as area
-        plt.plot(predicted_dates, prediction_optimum, color='blue', label='curve fit')
+        plt.plot(predicted_dates, prediction_optimum, color='blue', label='Avg Re - ' + str(reproduction_no))
         plt.gca().fill_between(predicted_dates, prediction_low, prediction_high, alpha=0.2)
 
     # Plot final results
@@ -106,12 +122,14 @@ def plot_statistics(data_set, start_date, no_days_to_predict, linear_regres=True
     # Other tweaks for the graph
     plt.xlim(left=start_date, right=predicted_dates[0])
     plt.ylim(bottom=0)
-    fig.set_size_inches(12, 8)
+    fig.set_size_inches(10, 8)
     plt.legend(bbox_to_anchor=(1, 1), loc='upper left')
-    plt.show()
-    # Finally show the plot
-    fig.savefig('frontend/static/test.png')
-    return fig
+
+    # Store the image
+    random_image_name = str(random.randint(1000000, 9999999)) + '.png'
+    fig.savefig('frontend/static/' + random_image_name, bbox_inches='tight')
+    plt.close()
+    return random_image_name
 
 
 def cases_per_municipality(data_set, start_date):

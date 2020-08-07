@@ -2,10 +2,54 @@
 
 {% block content %}
 
-<div class="base-div container-lg">
-
-    <img src="{{ url_for('static', filename='test.png') }}"  alt="plot"/>
-    
+<div class="container-lg">
+    <div class="row justify-content-center">
+        <form action="{{ url_for('index') }}" method="post" name="plot">
+            <div class="form-group row align-items-center">
+                <div class="col-auto">
+                    <h1>Municipality</h1>
+                    {{ form.hidden_tag() }}
+                    {{ form.municipality(size=30, class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    <h1>Province</h1>
+                    {{ form.province(size=30, class_='form-control') }}
+                </div>
+            </div>
+            <div class="form-group row align-items-center">
+                <div class="col-auto">
+                    <h1>Start Date</h1>
+                    {{ form.start_date(class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    <h1>End Date</h1>
+                    {{ form.end_date(class_='form-control') }}
+                </div>
+            </div>
+            <div class="form-group row align-items-center">
+                <div class="col-auto">
+                    Days to predict
+                    {{ form.no_days_to_predict(class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    Plot with curve
+                    {{ form.exp_curve(class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    Plot with lin. reg.
+                    {{ form.linear_regres(class_='form-control') }}
+                </div>
+            </div>
+            <div class="form-group row align-items-center">
+                <div class="col-auto mx-auto">
+                    {{ form.submit(class_='form-control btn btn-light') }}
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="row justify-content-center">
+        <img src="{{ url_for('static', filename=image_name) }}" alt="plot" class="rounded img-fluid"/>
+    </div>
 </div>
 
 {% endblock %}
