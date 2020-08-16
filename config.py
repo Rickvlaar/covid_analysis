@@ -10,6 +10,7 @@ class Config(object):
 
 class Endpoints(object):
     RIVM_CUMULATIVE = 'https://data.rivm.nl/covid-19/COVID-19_aantallen_gemeente_cumulatief.json'
+    RIVM_PREVALENCE = 'https://data.rivm.nl/covid-19/COVID-19_prevalentie.json'
 
 
 class FlaskConfig(object):

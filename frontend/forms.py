@@ -13,3 +13,7 @@ class SelectionForm(FlaskForm):
     linear_regres = BooleanField('LinearRegres', [Optional()], default=True)
     exp_curve = BooleanField('ExpCurve', [Optional()], default=True)
     submit = SubmitField('Plot!', [Optional()])
+
+
+class UpdateStatsForm(FlaskForm):
+    submit = SubmitField('Update Stats', [Optional()])

@@ -44,6 +44,11 @@
                 <div class="col-auto mx-auto">
                     {{ form.submit(class_='form-control btn btn-light') }}
                 </div>
+                <div class="col-auto mx-auto">
+                    <button onclick="location.href='{{ url_for('update_database') }}'" type="button"
+                            class="form-control btn btn-light">Update Stats
+                    </button>
+                </div>
             </div>
         </form>
     </div>

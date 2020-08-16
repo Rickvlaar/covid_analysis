@@ -16,3 +16,12 @@ def quick_caller(municipality=None, province=None):
             no_days_to_predict=7,
             linear_regres=True,
             exp_curve=True)
+
+
+def quick_caller2():
+    graph_plotter.plot_reproduction_no(data_set=dutch.get_daily_prevalence_numbers(),
+                                       incubation_time=4,
+                                       generational_interval=3,
+                                       start_date=datetime.date(2020, 7, 1),
+                                       end_date=datetime.date(2020, 7, 28),
+                                       no_days_to_predict=7)

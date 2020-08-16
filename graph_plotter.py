@@ -7,12 +7,12 @@ import numpy as np
 import matplotlib
 import random
 
-
 # Prevent GUI from being triggered which causes crashes
 matplotlib.use('agg')
 
 
-def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to_predict=0, linear_regres=True, exp_curve=True):
+def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to_predict=0, linear_regres=True,
+                    exp_curve=True):
     """
     Parameters
     ----------
@@ -37,29 +37,7 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
         msg = 'Choose either exponential and/or linear prediction when using no_days_to_predict'
         raise RuntimeError(msg)
 
-    # None value should default to max
-    if not end_date:
-        end_date = date.max
-
-    # Convert the data set for use in the plotter
-    statistics = data_set
-    dates = []
-    cases = []
-    for stat in statistics:
-        if end_date >= stat[0] >= start_date:
-            dates.append(stat[0])
-            cases.append(stat[1])
-
-    # Convert dates to integers for easy calculations
-    dates = mdates.date2num(dates)
-
-    # Start predicting from that last day present the dates array
-    predicted_dates = []
-    if no_days_to_predict > 0:
-        while no_days_to_predict != 0:
-            predicted_dates.append(dates[0] + no_days_to_predict)
-            no_days_to_predict -= 1
-    predicted_dates.extend(dates)
+    dates, cases, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
 
     # Adds linear regression line to the plot
     if linear_regres:
@@ -70,30 +48,23 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
 
     # Add an exponential curve to the plot
     if exp_curve:
-        def exponent(x, a, b):
-            return a * np.exp(x * b)
+        popt, pcov, perr = curve_fit_cases(dates, cases)
 
-        # convert for calculation
-        calc_range = np.linspace(start=1, stop=len(dates), num=len(dates))
-        calc_range = np.flip(calc_range)
+        # If the popt is too close to linearity, the plot fails, so skip it
+        if 0.999 <= popt[0] >= 1.001:
+            predict_range = np.linspace(start=1, stop=len(predicted_dates), num=len(predicted_dates))
+            predict_range = np.flip(predict_range)
 
-        predict_range = np.linspace(start=1, stop=len(predicted_dates), num=len(predicted_dates))
-        predict_range = np.flip(predict_range)
+            prediction_low = exponent(np.array(predict_range), popt[0] - perr[0], popt[1] - perr[1])
+            prediction_optimum = exponent(np.array(predict_range), popt[0], popt[1])
+            prediction_high = exponent(np.array(predict_range), popt[0] + perr[0], popt[1] + perr[1])
 
-        # Determine best fit for curve and add to plot, include standard deviation
-        popt, pcov = optimize.curve_fit(exponent, calc_range, cases)
-        perr = np.sqrt(np.diag(pcov))
+            # Calculate reproduction number and add to plot
+            reproduction_no = round(exponent(1, popt[0], popt[1]) / exponent(0, popt[0], popt[1]), 2)
 
-        prediction_low = exponent(np.array(predict_range), popt[0] - perr[0], popt[1] - perr[1])
-        prediction_optimum = exponent(np.array(predict_range), popt[0], popt[1])
-        prediction_high = exponent(np.array(predict_range), popt[0] + perr[0], popt[1] + perr[1])
-
-        # Calculate reproduction number and add to plot
-        reproduction_no = round(exponent(1, popt[0], popt[1]) / exponent(0, popt[0], popt[1]), 2)
-
-        # Plot the optimum as line and the rest as area
-        plt.plot(predicted_dates, prediction_optimum, color='blue', label='Avg Re - ' + str(reproduction_no))
-        plt.gca().fill_between(predicted_dates, prediction_low, prediction_high, alpha=0.2)
+            # Plot the optimum as line and the rest as area
+            plt.plot(predicted_dates, prediction_optimum, color='blue', label='Avg Re - ' + str(reproduction_no))
+            plt.gca().fill_between(predicted_dates, prediction_low, prediction_high, alpha=0.2)
 
     # Plot final results
     plt.title('Cases over Time')
@@ -145,3 +116,140 @@ def cases_per_municipality(data_set, start_date):
     stack-bar plot of cases per municipality. A.K.A The guilt-chart
     """
 
+
+def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.9, start_date=date.min, end_date=date.max,
+                         no_days_to_predict=0):
+    """
+    Parameters
+    ----------
+    data_set: list of DutchStatistics
+        pass data set containing statistics to plot
+    incubation_time: decimal, optional
+        time in days from infection to disease in order to calculate Re
+    generational_interval: decimal, optional
+        time in days between generations
+    start_date: datetime.date, optional
+        date to start plotting the data e.g datetime.date(2020, 7, 30)
+    end_date: datetime.date, optional
+        defaults to infinity; date to end the plot, useful for date ranges
+    no_days_to_predict: int, optional
+        number of dates to predict in the future
+
+    :return:
+    Plots Re as it changes over time
+    """
+
+    dates, cases, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
+
+    rep_no_list = []
+    index = 0
+    while index <= len(dates) - (incubation_time + 1):
+        # calculate growth rate
+        calculate_to = index + incubation_time
+        popt, pcov, perr = curve_fit_cases(dates[index:calculate_to], cases[index:calculate_to])
+
+        # Calculate reproduction number and add to plot, formula: R=exp(rTc)
+        # r = growth_rate
+        # Tc = generational_interval
+        growth_rate = ((exponent(index + 1, popt[0], popt[1]) / exponent(index, popt[0], popt[1])) - 1)
+        reproduction_no = round(np.exp(growth_rate * generational_interval - ((1/2) * growth_rate**2 * 0.95**2)), 2)
+
+        rep_no_list.append(reproduction_no)
+        index += 1
+
+    # Tweak the output
+    fig = plt.gcf()
+    ax = plt.gca()
+
+    # Convert dates to legible format and show grid on day level
+    days = mdates.DayLocator()
+    fmt = mdates.DateFormatter('%Y-%m-%d')
+    ax.xaxis.set_minor_locator(days)
+    ax.xaxis.set_major_formatter(fmt)
+    ax.xaxis.set_minor_formatter(fmt)
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    fig.autofmt_xdate(rotation=45, which='both')
+
+    plt.ylim(bottom=0, top=3)
+    plt.grid(True, which='both')
+
+    rep_nos = plt.plot(dates[incubation_time:len(dates)], rep_no_list, color='blue', label='Daily Re')
+    for rep_date, rep_no in zip(dates[incubation_time:len(dates)], rep_no_list):
+        ax.annotate(rep_no, xy=(rep_date, rep_no + 0.1), horizontalalignment='center',
+                    verticalalignment='bottom', rotation=45)
+
+    # Set ticks on y axis
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+
+    fig.set_size_inches(10, 8)
+
+    # Plot the optimum as line and the rest as area
+    fig.savefig('frontend/static/Daily R.png', bbox_inches='tight')
+
+
+def prepare_data_for_graph(data_set, start_date=date.min, end_date=date.max, no_days_to_predict=0):
+    """
+    Parameters
+    ----------
+    data_set: list of DutchStatistics
+        pass data set containing statistics to plot
+    start_date: datetime.date, optional
+        date to start plotting the data e.g datetime.date(2020, 7, 30)
+    end_date: datetime.date, optional
+        defaults to infinity; date to end the plot, useful for date ranges
+    no_days_to_predict: int, optional
+        number of dates to predict in the future
+
+    :return:
+    dates: list matplotlib.dates
+        the original dates converted for use in matplotlib
+    cases: list integer
+        list of proven cases
+    predicted_dates: list matplotlib.dates
+        list of dates used for prediction purposes
+
+    """
+
+    # None value should default to max
+    if not end_date:
+        end_date = date.max
+
+    # Convert the data set for use in the plotter
+    statistics = data_set
+    dates = []
+    cases = []
+    for stat in statistics:
+        if end_date >= stat[0] >= start_date:
+            dates.append(stat[0])
+            cases.append(stat[1])
+
+    # Convert dates to integers for easy calculations
+    dates = mdates.date2num(dates)
+
+    # Start predicting from that last day present the dates array
+    predicted_dates = []
+    if no_days_to_predict > 0:
+        while no_days_to_predict != 0:
+            predicted_dates.append(dates[0] + no_days_to_predict)
+            no_days_to_predict -= 1
+    predicted_dates.extend(dates)
+
+    return dates, cases, predicted_dates
+
+
+def curve_fit_cases(dates, cases):
+    # convert for calculation
+    calc_range = np.linspace(start=1, stop=len(dates), num=len(dates))
+    calc_range = np.flip(calc_range)
+
+    # Determine best fit for curve and add to plot, include standard deviation
+    print(optimize.curve_fit(exponent, calc_range, cases))
+    popt, pcov = optimize.curve_fit(exponent, calc_range, cases)
+    perr = np.sqrt(np.diag(pcov))
+
+    return popt, pcov, perr
+
+
+def exponent(x, a, b):
+    return a * np.exp(x * b)

@@ -32,6 +32,10 @@ class DutchStatistics(Base):
     critical = Column(Integer)
     deaths = Column(Integer)
     recovered = Column(Integer)
+    prevalence_low = Column(Integer)
+    prevalence_avg = Column(Integer)
+    prevalence_high = Column(Integer)
+
 
     def __repr__(self):
         return self.attributes()

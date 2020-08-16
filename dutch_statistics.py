@@ -9,16 +9,24 @@ from config import Endpoints
 def get_dutch_stats():
     session = database_session()
     session.query(DutchStatistics).delete()
-    rivm_statistics = callouts.get_covid_stats(Endpoints.RIVM_CUMULATIVE)
-    for record in rivm_statistics:
+    rivm_cumulative = callouts.get_covid_stats(Endpoints.RIVM_CUMULATIVE)
+    rivm_prevalence = callouts.get_covid_stats(Endpoints.RIVM_PREVALENCE)
+    prevalence_dict = {datetime.date.fromisoformat(record['Date']): record for record in rivm_prevalence}
+    for record in rivm_cumulative:
+        reported_date = datetime.date.fromisoformat(record['Date_of_report'][0:10])
         dutch_daily_stat = data_model.DutchStatistics(
                 province=record['Province'],
                 municipality=record['Municipality_name'],
-                reported_date=datetime.date.fromisoformat(record['Date_of_report'][0:10]),
+                reported_date=reported_date,
                 cumulative_infections=record['Total_reported'],
                 cumulative_hospitalised=record['Hospital_admission'],
-                cumulative_deaths=record['Deceased'],
+                cumulative_deaths=record['Deceased']
         )
+        related_record = prevalence_dict.get(reported_date)
+        if related_record:
+            dutch_daily_stat.prevalence_low = related_record['prev_low']
+            dutch_daily_stat.prevalence_avg = related_record['prev_avg']
+            dutch_daily_stat.prevalence_high = related_record['prev_up']
         session.add(dutch_daily_stat)
     session.commit()
     session.close()
@@ -79,4 +87,18 @@ def sum_dutch_total_infections(municipality, province):
         query = query.filter_by(province=province)
 
     dutch_totals = query.all()
+
+    session.close()
     return dutch_totals
+
+
+def get_daily_prevalence_numbers():
+    session = database_session()
+    query = session.query(DutchStatistics.reported_date,
+                          DutchStatistics.prevalence_avg) \
+        .group_by(DutchStatistics.reported_date) \
+        .order_by(DutchStatistics.reported_date.desc())
+    average_prevalence = query.all()
+
+    session.close()
+    return average_prevalence
