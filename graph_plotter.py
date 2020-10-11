@@ -37,7 +37,7 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
         msg = 'Choose either exponential and/or linear prediction when using no_days_to_predict'
         raise RuntimeError(msg)
 
-    dates, cases, hospitalised, deaths, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
+    dates, cases, hospitalised, deaths, hospitalised_nice, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
 
     # Adds linear regression line to the plot
     if linear_regres:
@@ -48,23 +48,23 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
 
     # Add an exponential curve to the plot
     if exp_curve:
-        add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=cases, color='blue')
+        # add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=cases, color='blue')
         add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=hospitalised, color='teal')
+        add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=hospitalised_nice, color='purple')
         add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=deaths, color='brown')
+
+
 
     # Plot final results
     plt.title('Cases over Time')
-    plt.plot(dates, cases, color='red', label='positive tests')
+    # plt.plot(dates, cases, color='red', label='positive tests')
+    plt.plot(dates, hospitalised, color='orange', label='hospitalised - RIVM')
+    plt.plot(dates, hospitalised_nice, color='purple', label='hospitalised - NICE')
+    plt.plot(dates, deaths, color='grey', label='deaths')
 
     # Tweak the output
     fig = plt.gcf()
     ax = plt.gca()
-
-    # Add deaths and hospitalisations on a secondary axis
-    # sec_ax = ax.twinx()
-    plt.plot(dates, hospitalised, color='orange', label='hospitalised')
-    plt.plot(dates, deaths, color='grey', label='deaths')
-    # sec_ax.set_ylim(bottom=0, top=200)
 
     # Convert dates to legible format and show grid on day level
     days = mdates.DayLocator()
@@ -81,11 +81,11 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
 
     # ax.yaxis.set_major_locator(ticker.MultipleLocator(25))
 
-
     # Show values for predictions and latest count
-    ax.annotate(str(cases[0]), xy=(dates[0], cases[0]))
+    # ax.annotate(str(cases[0]), xy=(dates[0], cases[0]))
     ax.annotate(str(hospitalised[0]), xy=(dates[0], hospitalised[0]))
     ax.annotate(str(deaths[0]), xy=(dates[0], deaths[0]))
+    ax.annotate(str(hospitalised_nice[0]), xy=(dates[0], hospitalised_nice[0]))
 
     # Other tweaks for the graph
     plt.xlim(left=start_date, right=predicted_dates[0])
@@ -136,7 +136,7 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     Plots Re as it changes over time
     """
 
-    dates, cases, hospitalised, deaths, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
+    dates, cases, hospitalised, deaths, hospitalised_nice, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
 
     rep_no_list = []
     index = 0
@@ -218,12 +218,14 @@ def prepare_data_for_graph(data_set, start_date=date.min, end_date=date.max, no_
     cases = []
     hospitalised = []
     deaths = []
+    hospitalised_nice = []
     for stat in statistics:
         if end_date >= stat[0] >= start_date:
             dates.append(stat[0])
             cases.append(stat[1])
             hospitalised.append(stat[2])
             deaths.append(stat[3])
+            hospitalised_nice.append(stat[4])
 
     # Convert dates to integers for easy calculations
     dates = mdates.date2num(dates)
@@ -236,7 +238,7 @@ def prepare_data_for_graph(data_set, start_date=date.min, end_date=date.max, no_
             no_days_to_predict -= 1
     predicted_dates.extend(dates)
 
-    return dates, cases, hospitalised, deaths, predicted_dates
+    return dates, cases, hospitalised, deaths, hospitalised_nice, predicted_dates
 
 
 def curve_fit_cases(dates, cases):

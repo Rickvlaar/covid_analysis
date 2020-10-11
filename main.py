@@ -5,7 +5,7 @@ import datetime
 
 
 def refresh_dutch_statistics():
-    dutch.get_dutch_stats()
+    dutch.get_rivm_stats()
     dutch.calculate_dutch_daily_statistics()
 
 

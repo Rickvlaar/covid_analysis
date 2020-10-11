@@ -6,7 +6,7 @@ from sqlalchemy.sql import func
 from config import Endpoints
 
 
-def get_dutch_stats():
+def get_rivm_stats():
     session = database_session()
     session.query(DutchStatistics).delete()
     rivm_cumulative = callouts.get_covid_stats(Endpoints.RIVM_CUMULATIVE)
@@ -28,6 +28,35 @@ def get_dutch_stats():
             dutch_daily_stat.prevalence_avg = related_record['prev_avg']
             dutch_daily_stat.prevalence_high = related_record['prev_up']
         session.add(dutch_daily_stat)
+    session.commit()
+    session.close()
+
+
+def get_nice_stats():
+    """
+    NICE daily intake data consists of two arrays:
+        the first array contains proven covid cases
+        the second array contains suspected covid cases
+    """
+    session = database_session()
+    query = session.query(DutchStatistics).order_by(DutchStatistics.reported_date.desc())
+    all_stats = query.all()
+
+    nice_daily_intake = callouts.get_covid_stats(Endpoints.NICE_DAILY_INTAKE)
+    nice_intake_cumulative = callouts.get_covid_stats(Endpoints.NICE_CUMULATIVE_INTAKE)
+
+    daily_proven_dict = {datetime.date.fromisoformat(stat.get('date')): stat.get('value') for stat in
+                         nice_daily_intake[0]}
+    daily_suspected_dict = {datetime.date.fromisoformat(stat.get('date')): stat.get('value') for stat in
+                            nice_daily_intake[1]}
+    nice_intake_cumulative_dict = {datetime.date.fromisoformat(stat.get('date')): stat.get('value') for stat in
+                                   nice_intake_cumulative}
+
+    for record in all_stats:
+        record.hospitalised_nice_proven = daily_proven_dict.get(record.reported_date)
+        record.hospitalised_nice_suspected = daily_suspected_dict.get(record.reported_date)
+        record.cumulative_hospitalised_nice = nice_intake_cumulative_dict.get(record.reported_date)
+
     session.commit()
     session.close()
 
@@ -76,7 +105,8 @@ def sum_dutch_total_infections(municipality, province):
     query = session.query(DutchStatistics.reported_date,
                           func.sum(DutchStatistics.infections),
                           func.sum(DutchStatistics.hospitalised),
-                          func.sum(DutchStatistics.deaths)) \
+                          func.sum(DutchStatistics.deaths),
+                          DutchStatistics.hospitalised_nice_proven) \
         .group_by(DutchStatistics.reported_date) \
         .order_by(DutchStatistics.reported_date.desc())
 
