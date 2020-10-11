@@ -20,7 +20,7 @@ def index():
                 end_date=form.end_date.data,
                 no_days_to_predict=form.no_days_to_predict.data,
                 linear_regres=form.linear_regres.data,
-                exp_curve=form.linear_regres.data)
+                exp_curve=form.exp_curve.data)
     return render_template('show_plots.html', form=form, image_name=session.get('image_name'))
 
 

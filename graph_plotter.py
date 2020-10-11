@@ -1,5 +1,5 @@
 from datetime import date
-from scipy import stats, optimize
+from scipy import stats, optimize, interpolate
 import matplotlib.ticker as ticker
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -37,7 +37,7 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
         msg = 'Choose either exponential and/or linear prediction when using no_days_to_predict'
         raise RuntimeError(msg)
 
-    dates, cases, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
+    dates, cases, hospitalised, deaths, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
 
     # Adds linear regression line to the plot
     if linear_regres:
@@ -48,23 +48,9 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
 
     # Add an exponential curve to the plot
     if exp_curve:
-        popt, pcov, perr = curve_fit_cases(dates, cases)
-
-        # If the popt is too close to linearity, the plot fails, so skip it
-        if 0.999 <= popt[0] >= 1.001:
-            predict_range = np.linspace(start=1, stop=len(predicted_dates), num=len(predicted_dates))
-            predict_range = np.flip(predict_range)
-
-            prediction_low = exponent(np.array(predict_range), popt[0] - perr[0], popt[1] - perr[1])
-            prediction_optimum = exponent(np.array(predict_range), popt[0], popt[1])
-            prediction_high = exponent(np.array(predict_range), popt[0] + perr[0], popt[1] + perr[1])
-
-            # Calculate reproduction number and add to plot
-            reproduction_no = round(exponent(1, popt[0], popt[1]) / exponent(0, popt[0], popt[1]), 2)
-
-            # Plot the optimum as line and the rest as area
-            plt.plot(predicted_dates, prediction_optimum, color='blue', label='Avg Re - ' + str(reproduction_no))
-            plt.gca().fill_between(predicted_dates, prediction_low, prediction_high, alpha=0.2)
+        add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=cases, color='blue')
+        add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=hospitalised, color='teal')
+        add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=deaths, color='brown')
 
     # Plot final results
     plt.title('Cases over Time')
@@ -73,6 +59,12 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
     # Tweak the output
     fig = plt.gcf()
     ax = plt.gca()
+
+    # Add deaths and hospitalisations on a secondary axis
+    # sec_ax = ax.twinx()
+    plt.plot(dates, hospitalised, color='orange', label='hospitalised')
+    plt.plot(dates, deaths, color='grey', label='deaths')
+    # sec_ax.set_ylim(bottom=0, top=200)
 
     # Convert dates to legible format and show grid on day level
     days = mdates.DayLocator()
@@ -84,11 +76,16 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
     plt.grid(True, which='both')
 
     # Set ticks on y axis
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(100))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(250))
     ax.yaxis.set_minor_locator(ticker.MultipleLocator(25))
+
+    # ax.yaxis.set_major_locator(ticker.MultipleLocator(25))
+
 
     # Show values for predictions and latest count
     ax.annotate(str(cases[0]), xy=(dates[0], cases[0]))
+    ax.annotate(str(hospitalised[0]), xy=(dates[0], hospitalised[0]))
+    ax.annotate(str(deaths[0]), xy=(dates[0], deaths[0]))
 
     # Other tweaks for the graph
     plt.xlim(left=start_date, right=predicted_dates[0])
@@ -139,7 +136,7 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     Plots Re as it changes over time
     """
 
-    dates, cases, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
+    dates, cases, hospitalised, deaths, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
 
     rep_no_list = []
     index = 0
@@ -219,10 +216,14 @@ def prepare_data_for_graph(data_set, start_date=date.min, end_date=date.max, no_
     statistics = data_set
     dates = []
     cases = []
+    hospitalised = []
+    deaths = []
     for stat in statistics:
         if end_date >= stat[0] >= start_date:
             dates.append(stat[0])
             cases.append(stat[1])
+            hospitalised.append(stat[2])
+            deaths.append(stat[3])
 
     # Convert dates to integers for easy calculations
     dates = mdates.date2num(dates)
@@ -235,7 +236,7 @@ def prepare_data_for_graph(data_set, start_date=date.min, end_date=date.max, no_
             no_days_to_predict -= 1
     predicted_dates.extend(dates)
 
-    return dates, cases, predicted_dates
+    return dates, cases, hospitalised, deaths, predicted_dates
 
 
 def curve_fit_cases(dates, cases):
@@ -244,7 +245,6 @@ def curve_fit_cases(dates, cases):
     calc_range = np.flip(calc_range)
 
     # Determine best fit for curve and add to plot, include standard deviation
-    print(optimize.curve_fit(exponent, calc_range, cases))
     popt, pcov = optimize.curve_fit(exponent, calc_range, cases)
     perr = np.sqrt(np.diag(pcov))
 
@@ -253,3 +253,22 @@ def curve_fit_cases(dates, cases):
 
 def exponent(x, a, b):
     return a * np.exp(x * b)
+
+
+def add_curve_to_plot(dates, predicted_dates, cases, color):
+    popt, pcov, perr = curve_fit_cases(dates, cases)
+
+    # If the popt is too close to linearity, the plot fails, so skip it
+    if 0.999 <= popt[0] >= 1.001:
+        predict_range = np.linspace(start=1, stop=len(predicted_dates), num=len(predicted_dates))
+        predict_range = np.flip(predict_range)
+
+        prediction_low = exponent(np.array(predict_range), popt[0] - perr[0], popt[1] - perr[1])
+        prediction_optimum = exponent(np.array(predict_range), popt[0], popt[1])
+        prediction_high = exponent(np.array(predict_range), popt[0] + perr[0], popt[1] + perr[1])
+
+        # Calculate reproduction number and add to plot
+        growth_factor = round(exponent(1, popt[0], popt[1]) / exponent(0, popt[0], popt[1]), 2)
+        # Plot the optimum as line and the rest as area
+        plt.plot(predicted_dates, prediction_optimum, color=color, label='growth factor - ' + str(growth_factor))
+        plt.gca().fill_between(predicted_dates, prediction_low, prediction_high, alpha=0.2, color=color)

@@ -23,5 +23,5 @@ def quick_caller2():
                                        incubation_time=4,
                                        generational_interval=3,
                                        start_date=datetime.date(2020, 7, 1),
-                                       end_date=datetime.date(2020, 7, 28),
+                                       end_date=datetime.date(2020, 9, 1),
                                        no_days_to_predict=7)
