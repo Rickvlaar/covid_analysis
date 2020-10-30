@@ -10,8 +10,12 @@ class SelectionForm(FlaskForm):
     start_date = DateField('StartDate', [Optional()], default=datetime.date.today() - datetime.timedelta(days=14))
     end_date = DateField('EndDate', [Optional()], default=None)
     no_days_to_predict = IntegerField('DaysToPredict', [Optional()], default=7)
-    linear_regres = BooleanField('LinearRegres', [Optional()], default=True)
+    linear_regres = BooleanField('LinearRegres', [Optional()], default=False)
     exp_curve = BooleanField('ExpCurve', [Optional()], default=True)
+    plot_cases = BooleanField('PlotCases', [Optional()], default=True)
+    plot_nice_hospitalised = BooleanField('PlotNiceHospitalised', [Optional()], default=False)
+    plot_rivm_hospitalised = BooleanField('PlotRivmHospitalised', [Optional()], default=False)
+    plot_deaths = BooleanField('PlotDeaths', [Optional()], default=False)
     submit = SubmitField('Plot!', [Optional()])
 
 

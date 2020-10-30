@@ -12,7 +12,8 @@ matplotlib.use('agg')
 
 
 def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to_predict=0, linear_regres=True,
-                    exp_curve=True):
+                    exp_curve=True, plot_cases=True, plot_nice_hospitalised=False, plot_rivm_hospitalised=False,
+                    plot_deaths=False):
     """
     Parameters
     ----------
@@ -37,7 +38,10 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
         msg = 'Choose either exponential and/or linear prediction when using no_days_to_predict'
         raise RuntimeError(msg)
 
-    dates, cases, hospitalised, deaths, hospitalised_nice, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
+    dates, cases, hospitalised, deaths, hospitalised_nice, predicted_dates = prepare_data_for_graph(data_set,
+                                                                                                    start_date,
+                                                                                                    end_date,
+                                                                                                    no_days_to_predict)
 
     # Adds linear regression line to the plot
     if linear_regres:
@@ -48,19 +52,25 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
 
     # Add an exponential curve to the plot
     if exp_curve:
-        # add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=cases, color='blue')
-        add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=hospitalised, color='teal')
-        add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=hospitalised_nice, color='purple')
-        add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=deaths, color='brown')
-
-
+        if plot_cases:
+            add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=cases, color='blue')
+        if plot_rivm_hospitalised:
+            add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=hospitalised, color='teal')
+        if plot_nice_hospitalised:
+            add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=hospitalised_nice, color='purple')
+        if plot_deaths:
+            add_curve_to_plot(dates=dates, predicted_dates=predicted_dates, cases=deaths, color='brown')
 
     # Plot final results
     plt.title('Cases over Time')
-    # plt.plot(dates, cases, color='red', label='positive tests')
-    plt.plot(dates, hospitalised, color='orange', label='hospitalised - RIVM')
-    plt.plot(dates, hospitalised_nice, color='purple', label='hospitalised - NICE')
-    plt.plot(dates, deaths, color='grey', label='deaths')
+    if plot_cases:
+        plt.plot(dates, cases, color='red', label='positive tests')
+    if plot_rivm_hospitalised:
+        plt.plot(dates, hospitalised, color='orange', label='hospitalised - RIVM')
+    if plot_nice_hospitalised:
+        plt.plot(dates, hospitalised_nice, color='purple', label='hospitalised - NICE')
+    if plot_deaths:
+        plt.plot(dates, deaths, color='grey', label='deaths')
 
     # Tweak the output
     fig = plt.gcf()
@@ -76,16 +86,20 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
     plt.grid(True, which='both')
 
     # Set ticks on y axis
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(250))
-    ax.yaxis.set_minor_locator(ticker.MultipleLocator(25))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1000))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(250))
 
     # ax.yaxis.set_major_locator(ticker.MultipleLocator(25))
 
     # Show values for predictions and latest count
-    # ax.annotate(str(cases[0]), xy=(dates[0], cases[0]))
-    ax.annotate(str(hospitalised[0]), xy=(dates[0], hospitalised[0]))
-    ax.annotate(str(deaths[0]), xy=(dates[0], deaths[0]))
-    ax.annotate(str(hospitalised_nice[0]), xy=(dates[0], hospitalised_nice[0]))
+    if plot_cases:
+        ax.annotate(str(cases[0]), xy=(dates[0], cases[0]))
+    if plot_rivm_hospitalised:
+        ax.annotate(str(hospitalised[0]), xy=(dates[0], hospitalised[0]))
+    if plot_nice_hospitalised:
+        ax.annotate(str(deaths[0]), xy=(dates[0], deaths[0]))
+    if plot_deaths:
+        ax.annotate(str(hospitalised_nice[0]), xy=(dates[0], hospitalised_nice[0]))
 
     # Other tweaks for the graph
     plt.xlim(left=start_date, right=predicted_dates[0])
@@ -114,7 +128,8 @@ def cases_per_municipality(data_set, start_date):
     """
 
 
-def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.9, start_date=date.min, end_date=date.max,
+def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.9, start_date=date.min,
+                         end_date=date.max,
                          no_days_to_predict=0):
     """
     Parameters
@@ -136,7 +151,10 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     Plots Re as it changes over time
     """
 
-    dates, cases, hospitalised, deaths, hospitalised_nice, predicted_dates = prepare_data_for_graph(data_set, start_date, end_date, no_days_to_predict)
+    dates, cases, hospitalised, deaths, hospitalised_nice, predicted_dates = prepare_data_for_graph(data_set,
+                                                                                                    start_date,
+                                                                                                    end_date,
+                                                                                                    no_days_to_predict)
 
     rep_no_list = []
     index = 0
@@ -149,7 +167,8 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
         # r = growth_rate
         # Tc = generational_interval
         growth_rate = ((exponent(index + 1, popt[0], popt[1]) / exponent(index, popt[0], popt[1])) - 1)
-        reproduction_no = round(np.exp(growth_rate * generational_interval - ((1/2) * growth_rate**2 * 0.95**2)), 2)
+        reproduction_no = round(np.exp(growth_rate * generational_interval - ((1 / 2) * growth_rate ** 2 * 0.95 ** 2)),
+                                2)
 
         rep_no_list.append(reproduction_no)
         index += 1

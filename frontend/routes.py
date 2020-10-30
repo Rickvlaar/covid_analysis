@@ -4,6 +4,7 @@ import graph_plotter
 import dutch_statistics
 import main
 
+
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/plot', methods=['GET', 'POST'])
 def index():
@@ -20,7 +21,11 @@ def index():
                 end_date=form.end_date.data,
                 no_days_to_predict=form.no_days_to_predict.data,
                 linear_regres=form.linear_regres.data,
-                exp_curve=form.exp_curve.data)
+                exp_curve=form.exp_curve.data,
+                plot_cases=form.plot_cases.data,
+                plot_nice_hospitalised=form.plot_nice_hospitalised.data,
+                plot_rivm_hospitalised=form.plot_rivm_hospitalised.data,
+                plot_deaths=form.plot_deaths.data)
     return render_template('show_plots.html', form=form, image_name=session.get('image_name'))
 
 

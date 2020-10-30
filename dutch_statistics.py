@@ -24,9 +24,9 @@ def get_rivm_stats():
         )
         related_record = prevalence_dict.get(reported_date)
         if related_record:
-            dutch_daily_stat.prevalence_low = related_record['prev_low']
-            dutch_daily_stat.prevalence_avg = related_record['prev_avg']
-            dutch_daily_stat.prevalence_high = related_record['prev_up']
+            dutch_daily_stat.prevalence_low = related_record.get('prev_low')
+            dutch_daily_stat.prevalence_avg = related_record.get('prev_avg')
+            dutch_daily_stat.prevalence_high = related_record.get('prev_up')
         session.add(dutch_daily_stat)
     session.commit()
     session.close()

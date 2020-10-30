@@ -41,6 +41,24 @@
                 </div>
             </div>
             <div class="form-group row align-items-center">
+                <div class="col-auto">
+                    Plot cases
+                    {{ form.plot_cases(class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    Plot NICE hospitalised
+                    {{ form.plot_nice_hospitalised(class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    Plot RIVM hospitalised
+                    {{ form.plot_rivm_hospitalised(class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    Plot deaths
+                    {{ form.plot_deaths(class_='form-control') }}
+                </div>
+            </div>
+            <div class="form-group row align-items-center">
                 <div class="col-auto mx-auto">
                     {{ form.submit(class_='form-control btn btn-light') }}
                 </div>
