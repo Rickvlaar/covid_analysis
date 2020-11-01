@@ -1,9 +1,11 @@
 from datetime import date
-from scipy import stats, optimize, interpolate
+from scipy import stats, optimize
+import dutch_statistics
 import matplotlib.ticker as ticker
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import matplotlib
 import random
 
@@ -166,12 +168,19 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
         # Calculate reproduction number and add to plot, formula: R=exp(rTc)
         # r = growth_rate
         # Tc = generational_interval
-        growth_rate = ((exponent(index + 1, popt[0], popt[1]) / exponent(index, popt[0], popt[1])) - 1)
-        reproduction_no = round(np.exp(growth_rate * generational_interval - ((1 / 2) * growth_rate ** 2 * 0.95 ** 2)),
-                                2)
+        growth_rate = (exponent(1, popt[0], popt[1]) / exponent(0, popt[0], popt[1])) - 1
+        reproduction_no = round(
+                np.exp((growth_rate * generational_interval) - (0.5 * (growth_rate ** 2) * (3.8 ** 2))),
+                2)
 
         rep_no_list.append(reproduction_no)
         index += 1
+
+    # Calculate the moving average
+    rep_no_series = pd.Series(rep_no_list)
+    windows = rep_no_series.rolling(window=5)
+    rep_no_list_moving_avg = windows.mean()
+    rep_no_list_moving_avg = rep_no_list_moving_avg[3:]
 
     # Tweak the output
     fig = plt.gcf()
@@ -180,25 +189,37 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     # Convert dates to legible format and show grid on day level
     days = mdates.DayLocator()
     fmt = mdates.DateFormatter('%Y-%m-%d')
-    ax.xaxis.set_minor_locator(days)
+    # ax.xaxis.set_minor_locator(days)
     ax.xaxis.set_major_formatter(fmt)
     ax.xaxis.set_minor_formatter(fmt)
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    # ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+
     fig.autofmt_xdate(rotation=45, which='both')
 
-    plt.ylim(bottom=0, top=3)
+    plt.ylim(bottom=0, top=2)
     plt.grid(True, which='both')
 
-    rep_nos = plt.plot(dates[incubation_time:len(dates)], rep_no_list, color='blue', label='Daily Re')
-    for rep_date, rep_no in zip(dates[incubation_time:len(dates)], rep_no_list):
-        ax.annotate(rep_no, xy=(rep_date, rep_no + 0.1), horizontalalignment='center',
-                    verticalalignment='bottom', rotation=45)
+    # Add the RIVM reproduction numbers
+    rivm_stats = dutch_statistics.get_daily_reproduction_number()
+    rivm_rep_no_list = []
+    for stat in rivm_stats:
+        if end_date >= stat[0] >= start_date:
+            rivm_rep_no_list.append(stat[1])
+    rivm_rep_no_list = rivm_rep_no_list[incubation_time:]
+
+    end_date_index = len(dates) - incubation_time
+    # plt.plot(dates[0:end_date_index], rep_no_list, color='orange', label='Daily Re')
+    plt.plot(dates[0:end_date_index], rivm_rep_no_list, color='red', label='Daily Re - RIVM')
+    plt.plot(dates[0:end_date_index-3], rep_no_list_moving_avg, color='blue', label='Daily Re - 5 Day Moving Avg')
+    # for rep_date, rep_no in zip(dates[0:end_date_index], rep_no_list_moving_avg):
+    #     ax.annotate(round(rep_no, 2), xy=(rep_date, rep_no + 0.1), horizontalalignment='center',
+    #                 verticalalignment='bottom', rotation=45)
 
     # Set ticks on y axis
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
-    ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.1))
 
-    fig.set_size_inches(10, 8)
+    fig.set_size_inches(14, 10)
+    plt.legend(bbox_to_anchor=(1, 1), loc='upper left')
 
     # Plot the optimum as line and the rest as area
     fig.savefig('frontend/static/Daily R.png', bbox_inches='tight')

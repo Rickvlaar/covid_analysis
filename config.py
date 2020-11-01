@@ -10,7 +10,9 @@ class Config(object):
 
 class Endpoints(object):
     RIVM_CUMULATIVE = 'https://data.rivm.nl/covid-19/COVID-19_aantallen_gemeente_cumulatief.json'
+    RIVM_CASES = 'https://data.rivm.nl/covid-19/COVID-19_casus_landelijk.json'
     RIVM_PREVALENCE = 'https://data.rivm.nl/covid-19/COVID-19_prevalentie.json'
+    RIVM_REPRODUCTION = 'https://data.rivm.nl/covid-19/COVID-19_reproductiegetal.json'
     NICE_DAILY_INTAKE = 'https://www.stichting-nice.nl/covid-19/public/zkh/new-intake/'
     NICE_CUMULATIVE_INTAKE = 'https://www.stichting-nice.nl/covid-19/public/zkh/intake-count/'
 

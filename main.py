@@ -21,8 +21,8 @@ def quick_caller(municipality=None, province=None):
 
 def quick_caller2():
     graph_plotter.plot_reproduction_no(data_set=dutch.sum_dutch_total_infections(None, None),
-                                       incubation_time=4,
-                                       generational_interval=3,
-                                       start_date=datetime.date(2020, 10, 1),
-                                       end_date=datetime.date(2020, 10, 22),
+                                       incubation_time=5,
+                                       generational_interval=3.95,
+                                       start_date=datetime.date(2020, 6, 1),
+                                       end_date=datetime.date(2020, 10, 30),
                                        no_days_to_predict=7)

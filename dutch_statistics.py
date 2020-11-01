@@ -1,7 +1,7 @@
 import datetime
 import callouts
 from database import data_model, database_session
-from database.data_model import DutchStatistics
+from database.data_model import DutchStatistics, DutchIndividualCases
 from sqlalchemy.sql import func
 from config import Endpoints
 
@@ -11,7 +11,9 @@ def get_rivm_stats():
     session.query(DutchStatistics).delete()
     rivm_cumulative = callouts.get_covid_stats(Endpoints.RIVM_CUMULATIVE)
     rivm_prevalence = callouts.get_covid_stats(Endpoints.RIVM_PREVALENCE)
+    rivm_reproduction = callouts.get_covid_stats(Endpoints.RIVM_REPRODUCTION)
     prevalence_dict = {datetime.date.fromisoformat(record['Date']): record for record in rivm_prevalence}
+    reproduction_dict = {datetime.date.fromisoformat(record['Date']): record for record in rivm_reproduction}
     for record in rivm_cumulative:
         reported_date = datetime.date.fromisoformat(record['Date_of_report'][0:10])
         dutch_daily_stat = data_model.DutchStatistics(
@@ -27,6 +29,9 @@ def get_rivm_stats():
             dutch_daily_stat.prevalence_low = related_record.get('prev_low')
             dutch_daily_stat.prevalence_avg = related_record.get('prev_avg')
             dutch_daily_stat.prevalence_high = related_record.get('prev_up')
+        reproduction_record = reproduction_dict.get(reported_date)
+        if related_record:
+            dutch_daily_stat.reproduction_no = reproduction_record.get('Rt_avg')
         session.add(dutch_daily_stat)
     session.commit()
     session.close()
@@ -61,16 +66,37 @@ def get_nice_stats():
     session.close()
 
 
+def get_individual_cases_stats():
+    session = database_session()
+    rivm_cases = callouts.get_covid_stats(Endpoints.RIVM_CASES)
+    for record in rivm_cases:
+        reported_date = datetime.date.fromisoformat(record.get('Date_file')[0:10])
+        statistic_date = datetime.date.fromisoformat(record.get('Date_statistics'))
+        case_stat = data_model.DutchIndividualCases(reported_date=reported_date,
+                                                    statistic_date=statistic_date)
+        session.add(case_stat)
+    session.commit()
+    session.close()
+
+
 def calculate_dutch_daily_statistics():
     session = database_session()
     dutch_cumu_stats = session.query(DutchStatistics).order_by(DutchStatistics.municipality).order_by(
             DutchStatistics.id).all()
 
+    dutch_cases_stats = session.query(DutchIndividualCases.statistic_date,
+                                      func.count(DutchIndividualCases.id)).group_by(
+                                      DutchIndividualCases.statistic_date).order_by(
+                                      DutchIndividualCases.statistic_date).all()
+
+    dutch_cases_stat_dict = {stat[0]: stat[1] for stat in dutch_cases_stats}
+
     index = 0
     for record in dutch_cumu_stats:
         yesterday_record = dutch_cumu_stats[index - 1]
         if index > 0 and record.municipality is not None and record.municipality == yesterday_record.municipality:
-            record.infections = record.cumulative_infections - yesterday_record.cumulative_infections
+            # record.infections = record.cumulative_infections - yesterday_record.cumulative_infections
+            record.infections = dutch_cases_stat_dict.get(record.reported_date)
             record.deaths = record.cumulative_deaths - yesterday_record.cumulative_deaths
             record.hospitalised = record.cumulative_hospitalised - yesterday_record.cumulative_hospitalised
         else:
@@ -103,7 +129,7 @@ def calculate_dutch_daily_statistics():
 def sum_dutch_total_infections(municipality, province):
     session = database_session()
     query = session.query(DutchStatistics.reported_date,
-                          func.sum(DutchStatistics.infections),
+                          DutchStatistics.infections,
                           func.sum(DutchStatistics.hospitalised),
                           func.sum(DutchStatistics.deaths),
                           DutchStatistics.hospitalised_nice_proven) \
@@ -125,10 +151,25 @@ def sum_dutch_total_infections(municipality, province):
 def get_daily_prevalence_numbers():
     session = database_session()
     query = session.query(DutchStatistics.reported_date,
-                          DutchStatistics.prevalence_avg) \
+                          DutchStatistics.prevalence_avg,
+                          func.sum(DutchStatistics.hospitalised),
+                          func.sum(DutchStatistics.deaths),
+                          DutchStatistics.hospitalised_nice_proven) \
         .group_by(DutchStatistics.reported_date) \
         .order_by(DutchStatistics.reported_date.desc())
     average_prevalence = query.all()
 
     session.close()
     return average_prevalence
+
+
+def get_daily_reproduction_number():
+    session = database_session()
+    query = session.query(DutchStatistics.reported_date,
+                          DutchStatistics.reproduction_no) \
+        .group_by(DutchStatistics.reported_date) \
+        .order_by(DutchStatistics.reported_date.desc())
+    reproduction_numbers = query.all()
+
+    session.close()
+    return reproduction_numbers
