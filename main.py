@@ -7,6 +7,7 @@ import datetime
 def refresh_dutch_statistics():
     dutch.get_rivm_stats()
     dutch.get_nice_stats()
+    dutch.get_individual_cases_stats()
     dutch.calculate_dutch_daily_statistics()
 
 
@@ -23,6 +24,6 @@ def quick_caller2():
     graph_plotter.plot_reproduction_no(data_set=dutch.sum_dutch_total_infections(None, None),
                                        incubation_time=5,
                                        generational_interval=3.95,
-                                       start_date=datetime.date(2020, 6, 1),
+                                       start_date=datetime.date(2020, 10, 1),
                                        end_date=datetime.date(2020, 10, 30),
                                        no_days_to_predict=7)

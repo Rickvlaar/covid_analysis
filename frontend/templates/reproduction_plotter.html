@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-lg">
+    <div class="row justify-content-center">
+        <form action="{{ url_for('reproduction_plotter') }}" method="post" name="plot">
+            <div class="form-group row align-items-center">
+                <div class="col-auto">
+                    <h1>Start Date</h1>
+                    {{ form.hidden_tag() }}
+                    {{ form.start_date(class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    <h1>End Date</h1>
+                    {{ form.end_date(class_='form-control') }}
+                </div>
+            </div>
+            <div class="form-group row align-items-center">
+                <div class="col-auto">
+                    Incubation Time (Integer)
+                    {{ form.incubation_time(class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    Generational Interval (Float)
+                    {{ form.generational_interval(class_='form-control') }}
+                </div>
+                <div class="col-auto">
+                    Generational Interval St. Dev. (Float)
+                    {{ form.generational_interval_stdev(class_='form-control') }}
+                </div>
+            </div>
+            <div class="form-group row align-items-center">
+                <div class="col-auto mx-auto">
+                    {{ form.submit(class_='form-control btn btn-light') }}
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="row justify-content-center">
+        <img src="{{ url_for('static', filename=image_name) }}" alt="plot" class="rounded img-fluid"/>
+    </div>
+</div>
+
+{% endblock %}

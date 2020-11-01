@@ -40,6 +40,7 @@ class DutchStatistics(Base):
     cumulative_deaths = Column(Integer)
     cumulative_recovered = Column(Integer)
     infections = Column(Integer)
+    infections_by_date = Column(Integer)
     hospitalised = Column(Integer)
     hospitalised_nice_proven = Column(Integer)
     hospitalised_nice_suspected = Column(Integer)

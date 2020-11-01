@@ -95,8 +95,8 @@ def calculate_dutch_daily_statistics():
     for record in dutch_cumu_stats:
         yesterday_record = dutch_cumu_stats[index - 1]
         if index > 0 and record.municipality is not None and record.municipality == yesterday_record.municipality:
-            # record.infections = record.cumulative_infections - yesterday_record.cumulative_infections
-            record.infections = dutch_cases_stat_dict.get(record.reported_date)
+            record.infections_by_date = dutch_cases_stat_dict.get(record.reported_date)
+            record.infections = record.cumulative_infections - yesterday_record.cumulative_infections
             record.deaths = record.cumulative_deaths - yesterday_record.cumulative_deaths
             record.hospitalised = record.cumulative_hospitalised - yesterday_record.cumulative_hospitalised
         else:
@@ -129,7 +129,7 @@ def calculate_dutch_daily_statistics():
 def sum_dutch_total_infections(municipality, province):
     session = database_session()
     query = session.query(DutchStatistics.reported_date,
-                          DutchStatistics.infections,
+                          func.sum(DutchStatistics.infections),
                           func.sum(DutchStatistics.hospitalised),
                           func.sum(DutchStatistics.deaths),
                           DutchStatistics.hospitalised_nice_proven) \
@@ -146,6 +146,23 @@ def sum_dutch_total_infections(municipality, province):
 
     session.close()
     return dutch_totals
+
+
+def get_infections_by_date():
+    session = database_session()
+    query = session.query(DutchStatistics.reported_date,
+                          DutchStatistics.infections_by_date,
+                          func.sum(DutchStatistics.hospitalised),
+                          func.sum(DutchStatistics.deaths),
+                          DutchStatistics.hospitalised_nice_proven) \
+        .group_by(DutchStatistics.reported_date) \
+        .order_by(DutchStatistics.reported_date.desc())
+
+    dutch_totals = query.all()
+
+    session.close()
+    return dutch_totals
+
 
 
 def get_daily_prevalence_numbers():

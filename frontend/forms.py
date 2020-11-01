@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateField, IntegerField, SubmitField, BooleanField, HiddenField
+from wtforms import StringField, DateField, IntegerField, SubmitField, BooleanField, FloatField
 from wtforms.validators import Optional
 import datetime
 
@@ -16,6 +16,15 @@ class SelectionForm(FlaskForm):
     plot_nice_hospitalised = BooleanField('PlotNiceHospitalised', [Optional()], default=False)
     plot_rivm_hospitalised = BooleanField('PlotRivmHospitalised', [Optional()], default=False)
     plot_deaths = BooleanField('PlotDeaths', [Optional()], default=False)
+    submit = SubmitField('Plot!', [Optional()])
+
+
+class ReproductionPlotForm(FlaskForm):
+    start_date = DateField('StartDate', [Optional()], default=datetime.date(2020, 6, 1))
+    end_date = DateField('EndDate', [Optional()], default=datetime.date.today() - datetime.timedelta(days=5))
+    incubation_time = IntegerField('IncubationTime', [Optional()], default=5)
+    generational_interval = FloatField('GenerationalInterval', [Optional()], default=3.95)
+    generational_interval_stdev = FloatField('GenerationalIntervalStDev', [Optional()], default=3.95)
     submit = SubmitField('Plot!', [Optional()])
 
 

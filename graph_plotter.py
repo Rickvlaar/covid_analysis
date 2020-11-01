@@ -1,5 +1,6 @@
 from datetime import date
 from scipy import stats, optimize
+import time
 import dutch_statistics
 import matplotlib.ticker as ticker
 import matplotlib.dates as mdates
@@ -35,6 +36,9 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
     :return:
     Plots a graph with measured cases and optionally adds statistical prediction
     """
+
+    #  Clears the plot
+    plt.clf()
 
     if no_days_to_predict > 0 and not exp_curve and not linear_regres:
         msg = 'Choose either exponential and/or linear prediction when using no_days_to_predict'
@@ -110,7 +114,7 @@ def plot_statistics(data_set, start_date=date.min, end_date=date.max, no_days_to
     plt.legend(bbox_to_anchor=(1, 1), loc='upper left')
 
     # Store the image
-    random_image_name = str(random.randint(1000000, 9999999)) + '.png'
+    random_image_name = 'case_plot' + str(time.time_ns()) + '.png'
     fig.savefig('frontend/static/' + random_image_name, bbox_inches='tight')
     plt.close()
     return random_image_name
@@ -130,7 +134,8 @@ def cases_per_municipality(data_set, start_date):
     """
 
 
-def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.9, start_date=date.min,
+def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.9, generational_interval_stdev=3.9,
+                         start_date=date.min,
                          end_date=date.max,
                          no_days_to_predict=0):
     """
@@ -153,6 +158,9 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     Plots Re as it changes over time
     """
 
+    #  Clears the plot
+    plt.clf()
+
     dates, cases, hospitalised, deaths, hospitalised_nice, predicted_dates = prepare_data_for_graph(data_set,
                                                                                                     start_date,
                                                                                                     end_date,
@@ -169,9 +177,8 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
         # r = growth_rate
         # Tc = generational_interval
         growth_rate = (exponent(1, popt[0], popt[1]) / exponent(0, popt[0], popt[1])) - 1
-        reproduction_no = round(
-                np.exp((growth_rate * generational_interval) - (0.5 * (growth_rate ** 2) * (3.8 ** 2))),
-                2)
+        reproduction_no = round(np.exp((growth_rate * generational_interval) -
+                                       (0.5 * (growth_rate ** 2) * (generational_interval_stdev ** 2))), 2)
 
         rep_no_list.append(reproduction_no)
         index += 1
@@ -210,7 +217,7 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     end_date_index = len(dates) - incubation_time
     # plt.plot(dates[0:end_date_index], rep_no_list, color='orange', label='Daily Re')
     plt.plot(dates[0:end_date_index], rivm_rep_no_list, color='red', label='Daily Re - RIVM')
-    plt.plot(dates[0:end_date_index-3], rep_no_list_moving_avg, color='blue', label='Daily Re - 5 Day Moving Avg')
+    plt.plot(dates[0:end_date_index - 3], rep_no_list_moving_avg, color='blue', label='Daily Re - 5 Day Moving Avg')
     # for rep_date, rep_no in zip(dates[0:end_date_index], rep_no_list_moving_avg):
     #     ax.annotate(round(rep_no, 2), xy=(rep_date, rep_no + 0.1), horizontalalignment='center',
     #                 verticalalignment='bottom', rotation=45)
@@ -222,7 +229,9 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     plt.legend(bbox_to_anchor=(1, 1), loc='upper left')
 
     # Plot the optimum as line and the rest as area
-    fig.savefig('frontend/static/Daily R.png', bbox_inches='tight')
+    filename = 'Daily_R_' + str(time.time_ns()) + '.png'
+    fig.savefig('frontend/static/' + filename, bbox_inches='tight')
+    return filename
 
 
 def prepare_data_for_graph(data_set, start_date=date.min, end_date=date.max, no_days_to_predict=0):
