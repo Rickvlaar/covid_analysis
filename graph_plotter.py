@@ -184,10 +184,12 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
         index += 1
 
     # Calculate the moving average
+    window_size = 21
+    window_offset = window_size-2
     rep_no_series = pd.Series(rep_no_list)
-    windows = rep_no_series.rolling(window=5)
-    rep_no_list_moving_avg = windows.mean()
-    rep_no_list_moving_avg = rep_no_list_moving_avg[3:]
+    windows = rep_no_series.rolling(window=window_size, win_type='kaiser')
+    rep_no_list_moving_avg = windows.mean(beta=25)
+    rep_no_list_moving_avg = rep_no_list_moving_avg[11:]
 
     # Tweak the output
     fig = plt.gcf()
@@ -199,7 +201,7 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     # ax.xaxis.set_minor_locator(days)
     ax.xaxis.set_major_formatter(fmt)
     ax.xaxis.set_minor_formatter(fmt)
-    # ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(7))
 
     fig.autofmt_xdate(rotation=45, which='both')
 
@@ -215,9 +217,9 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     rivm_rep_no_list = rivm_rep_no_list[incubation_time:]
 
     end_date_index = len(dates) - incubation_time
-    # plt.plot(dates[0:end_date_index], rep_no_list, color='orange', label='Daily Re')
+    plt.plot(dates[0:end_date_index], rep_no_list, color='orange', label='Daily Re')
     plt.plot(dates[0:end_date_index], rivm_rep_no_list, color='red', label='Daily Re - RIVM')
-    plt.plot(dates[0:end_date_index - 3], rep_no_list_moving_avg, color='blue', label='Daily Re - 5 Day Moving Avg')
+    plt.plot(dates[0:end_date_index - 11], rep_no_list_moving_avg, color='blue', label='Daily Re - 5 Day Moving Avg')
     # for rep_date, rep_no in zip(dates[0:end_date_index], rep_no_list_moving_avg):
     #     ax.annotate(round(rep_no, 2), xy=(rep_date, rep_no + 0.1), horizontalalignment='center',
     #                 verticalalignment='bottom', rotation=45)

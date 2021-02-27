@@ -1,17 +1,16 @@
 import datetime
-import callouts
+import json
 from database import data_model, database_session
 from database.data_model import DutchStatistics, DutchIndividualCases
 from sqlalchemy.sql import func
-from config import Endpoints
 
 
 def get_rivm_stats():
     session = database_session()
     session.query(DutchStatistics).delete()
-    rivm_cumulative = callouts.get_covid_stats(Endpoints.RIVM_CUMULATIVE)
-    rivm_prevalence = callouts.get_covid_stats(Endpoints.RIVM_PREVALENCE)
-    rivm_reproduction = callouts.get_covid_stats(Endpoints.RIVM_REPRODUCTION)
+    rivm_cumulative = json.loads(open('data_files/RIVM_CUMULATIVE.json').read())
+    rivm_prevalence = json.loads(open('data_files/RIVM_PREVALENCE.json').read())
+    rivm_reproduction = json.loads(open('data_files/RIVM_REPRODUCTION.json').read())
     prevalence_dict = {datetime.date.fromisoformat(record['Date']): record for record in rivm_prevalence}
     reproduction_dict = {datetime.date.fromisoformat(record['Date']): record for record in rivm_reproduction}
     for record in rivm_cumulative:
@@ -47,8 +46,8 @@ def get_nice_stats():
     query = session.query(DutchStatistics).order_by(DutchStatistics.reported_date.desc())
     all_stats = query.all()
 
-    nice_daily_intake = callouts.get_covid_stats(Endpoints.NICE_DAILY_INTAKE)
-    nice_intake_cumulative = callouts.get_covid_stats(Endpoints.NICE_CUMULATIVE_INTAKE)
+    nice_daily_intake = json.loads(open('data_files/NICE_DAILY_INTAKE.json').read())
+    nice_intake_cumulative = json.loads(open('data_files/NICE_CUMULATIVE_INTAKE.json').read())
 
     daily_proven_dict = {datetime.date.fromisoformat(stat.get('date')): stat.get('value') for stat in
                          nice_daily_intake[0]}
@@ -68,7 +67,7 @@ def get_nice_stats():
 
 def get_individual_cases_stats():
     session = database_session()
-    rivm_cases = callouts.get_covid_stats(Endpoints.RIVM_CASES)
+    rivm_cases = json.loads(open('data_files/RIVM_CASES.json').read())
     for record in rivm_cases:
         reported_date = datetime.date.fromisoformat(record.get('Date_file')[0:10])
         statistic_date = datetime.date.fromisoformat(record.get('Date_statistics'))

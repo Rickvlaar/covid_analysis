@@ -2,9 +2,11 @@ from frontend import app
 import dutch_statistics as dutch
 import graph_plotter
 import datetime
+import util
 
 
 def refresh_dutch_statistics():
+    util.refresh_data_files()
     dutch.get_rivm_stats()
     dutch.get_nice_stats()
     dutch.get_individual_cases_stats()

@@ -2,6 +2,7 @@
 covid_analysis.db
 covid_analysis.db-journal
 frontend/static/*.png
+data_files/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
