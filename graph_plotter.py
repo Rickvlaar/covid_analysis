@@ -167,10 +167,11 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
                                                                                                     no_days_to_predict)
 
     rep_no_list = []
+    rounded_incubation_time = round(incubation_time)
     index = 0
-    while index <= len(dates) - (incubation_time + 1):
+    while index <= len(dates) - (rounded_incubation_time + 1):
         # calculate growth rate
-        calculate_to = index + incubation_time
+        calculate_to = index + rounded_incubation_time
         popt, pcov, perr = curve_fit_cases(dates[index:calculate_to], cases[index:calculate_to])
 
         # Calculate reproduction number and add to plot, formula: R=exp(rTc)
@@ -205,7 +206,7 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
 
     fig.autofmt_xdate(rotation=45, which='both')
 
-    plt.ylim(bottom=0, top=2)
+    plt.ylim(bottom=0.5, top=2)
     plt.grid(True, which='both')
 
     # Add the RIVM reproduction numbers
@@ -214,9 +215,9 @@ def plot_reproduction_no(data_set, incubation_time=5.2, generational_interval=3.
     for stat in rivm_stats:
         if end_date >= stat[0] >= start_date:
             rivm_rep_no_list.append(stat[1])
-    rivm_rep_no_list = rivm_rep_no_list[incubation_time:]
+    rivm_rep_no_list = rivm_rep_no_list[rounded_incubation_time:]
 
-    end_date_index = len(dates) - incubation_time
+    end_date_index = len(dates) - rounded_incubation_time
     plt.plot(dates[0:end_date_index], rep_no_list, color='orange', label='Daily Re')
     plt.plot(dates[0:end_date_index], rivm_rep_no_list, color='red', label='Daily Re - RIVM')
     plt.plot(dates[0:end_date_index - 11], rep_no_list_moving_avg, color='blue', label='Daily Re - 5 Day Moving Avg')

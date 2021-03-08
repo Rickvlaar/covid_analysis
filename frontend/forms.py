@@ -22,7 +22,7 @@ class SelectionForm(FlaskForm):
 class ReproductionPlotForm(FlaskForm):
     start_date = DateField('StartDate', [Optional()], default=datetime.date(2020, 6, 12))
     end_date = DateField('EndDate', [Optional()], default=datetime.date.today() - datetime.timedelta(days=5))
-    incubation_time = IntegerField('IncubationTime', [Optional()], default=4)
+    incubation_time = FloatField('IncubationTime', [Optional()], default=4)
     generational_interval = FloatField('GenerationalInterval', [Optional()], default=3.86)
     generational_interval_stdev = FloatField('GenerationalIntervalStDev', [Optional()], default=2.65)
     submit = SubmitField('Plot!', [Optional()])
